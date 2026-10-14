@@ -57,8 +57,6 @@ class CryptoListViewModel(
     fun refresh() = load()
 
     fun toggleFavorite(symbol: String) {
-        //log
-        
         favoriteRepository.toggleFavorite(symbol)
     }
 
