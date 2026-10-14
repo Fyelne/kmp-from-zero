@@ -2,10 +2,13 @@ package com.bvic.followmycrypto.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -105,6 +108,20 @@ fun CryptoDetail(crypto: Crypto, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.titleMedium,
             color = if (crypto.changePercent >= 0) PriceUp else PriceDown,
         )
+        Row {
+            Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "highest price")
+            Text(
+                text = formatPrice(crypto.highPrice),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+        Row {
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "lowest price")
+            Text(
+                text = formatPrice(crypto.lowPrice),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
     }
 }
 
@@ -115,7 +132,7 @@ fun CryptoDetailContentPreview() {
         CryptoDetailContent(
             symbol = "BTC",
             uiState = CryptoDetailUiState.Success(
-                Crypto(symbol = "BTC", name = "Bitcoin", price = 85613.50, changePercent = 0.88),
+                Crypto(symbol = "BTC", name = "Bitcoin", price = 85613.50,highPrice = 85666.50, lowPrice = 10000.00, changePercent = 0.88),
             ),
             onBack = {},
             onRetry = {},

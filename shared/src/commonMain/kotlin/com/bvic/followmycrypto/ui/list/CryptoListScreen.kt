@@ -140,8 +140,8 @@ fun CryptoRow(crypto: Crypto, onClick: () -> Unit, modifier: Modifier = Modifier
 }
 
 private val previewCryptos = listOf(
-    Crypto(symbol = "BTC", name = "Bitcoin", price = 85613.50, changePercent = 0.88),
-    Crypto(symbol = "ETH", name = "Ethereum", price = 3214.07, changePercent = -1.42),
+    Crypto(symbol = "BTC", name = "Bitcoin", price = 85613.50, highPrice = 85666.50, lowPrice = 10000.00, changePercent = 0.88),
+    Crypto(symbol = "ETH", name = "Ethereum", price = 3214.07, highPrice = 99999.99, lowPrice = 11111.11, changePercent = -1.42),
 )
 
 @Preview(showBackground = true)
