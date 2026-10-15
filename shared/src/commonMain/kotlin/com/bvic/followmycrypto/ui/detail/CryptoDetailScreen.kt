@@ -1,3 +1,4 @@
+
 package com.bvic.followmycrypto.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,13 +44,22 @@ fun CryptoDetailScreen(
     symbol: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: CryptoDetailViewModel = viewModel { CryptoDetailViewModel(symbol, AppContainer.cryptoRepository) },
+    viewModel: CryptoDetailViewModel = viewModel {
+        CryptoDetailViewModel(
+            symbol,
+            AppContainer.cryptoRepository,
+            AppContainer.favoriteRepository,
+        )
+    },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val favorites by viewModel.favorites.collectAsStateWithLifecycle()
 
     CryptoDetailContent(
         symbol = symbol,
         uiState = uiState,
+        isFavorite = symbol in favorites,
+        onToggleFavorite = viewModel::toggleFavorite,
         onBack = onBack,
         onRetry = viewModel::retry,
         modifier = modifier,
@@ -58,6 +70,8 @@ fun CryptoDetailScreen(
 fun CryptoDetailContent(
     symbol: String,
     uiState: CryptoDetailUiState,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -66,10 +80,39 @@ fun CryptoDetailContent(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(symbol, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        symbol,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Retour",
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(
+                            imageVector = if (isFavorite) {
+                                Icons.Filled.Favorite
+                            } else {
+                                Icons.Filled.FavoriteBorder
+                            },
+                            contentDescription = if (isFavorite) {
+                                "Retirer des favoris"
+                            } else {
+                                "Ajouter aux favoris"
+                            },
+                            tint = if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
                     }
                 },
             )
@@ -89,7 +132,10 @@ fun CryptoDetailContent(
 }
 
 @Composable
-fun CryptoDetail(crypto: Crypto, modifier: Modifier = Modifier) {
+fun CryptoDetail(
+    crypto: Crypto,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -101,15 +147,21 @@ fun CryptoDetail(crypto: Crypto, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
         Text(
             text = formatPrice(crypto.price),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
         )
+
         Text(
             text = "${formatPercent(crypto.changePercent)} sur 24h",
             style = MaterialTheme.typography.titleMedium,
-            color = if (crypto.changePercent >= 0) PriceUp else PriceDown,
+            color = if (crypto.changePercent >= 0) {
+                PriceUp
+            } else {
+                PriceDown
+            },
         )
         Row {
             Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "highest price")
@@ -135,8 +187,16 @@ fun CryptoDetailContentPreview() {
         CryptoDetailContent(
             symbol = "BTC",
             uiState = CryptoDetailUiState.Success(
-                Crypto(symbol = "BTC", name = "Bitcoin", price = 85613.50,highPrice = 85666.50, lowPrice = 10000.00, changePercent = 0.88),
+                Crypto(
+                    symbol = "BTC",
+                    name = "Bitcoin",
+                    price = 85613.50,
+                    highPrice = 85666.50,
+                    lowPrice = 10000.00,
+                    changePercent = 0.88),
             ),
+            isFavorite = true,
+            onToggleFavorite = {},
             onBack = {},
             onRetry = {},
         )
