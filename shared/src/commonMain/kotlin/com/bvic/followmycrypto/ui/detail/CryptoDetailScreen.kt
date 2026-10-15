@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -29,6 +30,7 @@ import com.bvic.followmycrypto.model.Crypto
 import com.bvic.followmycrypto.theme.FollowMyCryptoTheme
 import com.bvic.followmycrypto.theme.PriceDown
 import com.bvic.followmycrypto.theme.PriceUp
+import com.bvic.followmycrypto.ui.components.CryptoLogo
 import com.bvic.followmycrypto.ui.components.ErrorContent
 import com.bvic.followmycrypto.ui.components.LoadingContent
 import com.bvic.followmycrypto.ui.format.formatPercent
@@ -93,6 +95,7 @@ fun CryptoDetail(crypto: Crypto, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        CryptoLogo(crypto = crypto, modifier = Modifier.size(80.dp))
         Text(
             text = crypto.name,
             style = MaterialTheme.typography.titleLarge,
@@ -111,14 +114,14 @@ fun CryptoDetail(crypto: Crypto, modifier: Modifier = Modifier) {
         Row {
             Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "highest price")
             Text(
-                text = formatPrice(crypto.highPrice),
+                text = "sur 24h : ${formatPrice(crypto.highPrice)}",
                 style = MaterialTheme.typography.titleMedium,
             )
         }
         Row {
             Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "lowest price")
             Text(
-                text = formatPrice(crypto.lowPrice),
+                text = "sur 24h : ${formatPrice(crypto.lowPrice)}",
                 style = MaterialTheme.typography.titleMedium,
             )
         }

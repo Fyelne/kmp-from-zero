@@ -7,4 +7,8 @@ data class Crypto(
     val highPrice: Double,
     val lowPrice: Double,
     val changePercent: Double,
-)
+){
+    val logoUrl: String
+        get() = "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/${symbol.lowercase()}.png"
+
+}
