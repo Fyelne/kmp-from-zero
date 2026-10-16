@@ -1,17 +1,21 @@
 package com.bvic.followmycrypto.ui.list
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -23,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,9 +35,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bvic.followmycrypto.data.AppContainer
 import com.bvic.followmycrypto.model.Crypto
+import com.bvic.followmycrypto.model.Currency
 import com.bvic.followmycrypto.theme.FollowMyCryptoTheme
 import com.bvic.followmycrypto.theme.PriceDown
 import com.bvic.followmycrypto.theme.PriceUp
+import com.bvic.followmycrypto.ui.components.CryptoLogo
 import com.bvic.followmycrypto.ui.components.ErrorContent
 import com.bvic.followmycrypto.ui.components.LoadingContent
 import com.bvic.followmycrypto.ui.format.formatPercent
@@ -52,11 +59,14 @@ fun CryptoListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val currency by viewModel.currency.collectAsStateWithLifecycle()
 
     CryptoListContent(
         uiState = uiState,
         favorites = favorites,
         favoritesOnly = favoritesOnly,
+        currency = currency,
+        onCurrencyChange = viewModel::changeCurrency,
         onRefresh = viewModel::refresh,
         onCryptoClick = onCryptoClick,
         onToggleFavorite = viewModel::toggleFavorite,
@@ -71,6 +81,8 @@ fun CryptoListContent(
     uiState: CryptoListUiState,
     favorites: Set<String>,
     favoritesOnly: Boolean,
+    currency: Currency = Currency.USD,
+    onCurrencyChange: (Currency) -> Unit = {},
     onRefresh: () -> Unit,
     onCryptoClick: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
@@ -110,21 +122,79 @@ fun CryptoListContent(
             )
         },
     ) { innerPadding ->
-        val contentModifier = Modifier.padding(innerPadding).fillMaxSize()
-        when (uiState) {
-            CryptoListUiState.Loading -> LoadingContent(modifier = contentModifier)
-            is CryptoListUiState.Error -> ErrorContent(
-                message = uiState.message,
-                onRetry = onRefresh,
-                modifier = contentModifier,
-            )
-            is CryptoListUiState.Success -> CryptoList(
-                cryptos = uiState.cryptos,
-                favorites = favorites,
-                onCryptoClick = onCryptoClick,
-                onToggleFavorite = onToggleFavorite,
-                modifier = contentModifier,
-            )
+
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+
+            // 1. Boutons de sélection de devise
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = {
+                        onCurrencyChange(Currency.USD)
+                    },
+                    enabled = currency != Currency.USD,
+                    colors = ButtonColors(
+                            disabledContentColor = Color.White,
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                        disabledContainerColor = Color.Blue
+                    ),
+                ) {
+                    Text("Dollar")
+                }
+
+                Button(
+                    onClick = {
+                        onCurrencyChange(Currency.EUR)
+                    },
+                    enabled = currency != Currency.EUR,
+                    modifier = Modifier.padding(start = 8.dp),
+                    colors = ButtonColors(
+                        disabledContentColor = Color.White,
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                        disabledContainerColor = Color.Blue
+                    ),
+                ) {
+                    Text("Euro")
+                }
+            }
+            when (uiState) {
+
+                CryptoListUiState.Loading -> {
+                    LoadingContent(
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                is CryptoListUiState.Error -> {
+                    ErrorContent(
+                        message = uiState.message,
+                        onRetry = onRefresh,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                is CryptoListUiState.Success -> {
+                    CryptoList(
+                        cryptos = uiState.cryptos,
+                        favorites = favorites,
+                        currency = currency,
+                        onCryptoClick = onCryptoClick,
+                        onToggleFavorite = onToggleFavorite,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
 }
@@ -133,6 +203,7 @@ fun CryptoListContent(
 fun CryptoList(
     cryptos: List<Crypto>,
     favorites: Set<String>,
+    currency: Currency,
     onCryptoClick: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -141,6 +212,7 @@ fun CryptoList(
         items(items = cryptos, key = { it.symbol }) { crypto ->
             CryptoRow(
                 crypto = crypto,
+                currency = currency,
                 isFavorite = crypto.symbol in favorites,
                 onClick = { onCryptoClick(crypto.symbol) },
                 onToggleFavorite = {
@@ -155,6 +227,7 @@ fun CryptoList(
 @Composable
 fun CryptoRow(
     crypto: Crypto,
+    currency: Currency = Currency.USD,
     isFavorite: Boolean,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -167,21 +240,24 @@ fun CryptoRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Column(modifier = Modifier.padding(end = 8.dp)) {
+            CryptoLogo(crypto = crypto, modifier = Modifier.size(40.dp))
+        }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = crypto.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = crypto.symbol,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+                Text(
+                    text = crypto.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = crypto.symbol,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = formatPrice(crypto.price),
+                text = formatPrice(crypto.price, currency),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
@@ -216,14 +292,16 @@ private val previewCryptos = listOf(
         symbol = "BTC",
         name = "Bitcoin",
         price = 85613.50,
-        changePercent = 0.88,
-    ),
+        highPrice = 85666.50,
+        lowPrice = 10000.00,
+        changePercent = 0.88),
     Crypto(
         symbol = "ETH",
         name = "Ethereum",
         price = 3214.07,
-        changePercent = -1.42,
-    ),
+        highPrice = 99999.99,
+        lowPrice = 11111.11,
+        changePercent = -1.42),
 )
 
 @Preview(showBackground = true)

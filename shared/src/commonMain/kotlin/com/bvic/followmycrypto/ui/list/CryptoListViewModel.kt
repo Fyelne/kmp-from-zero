@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bvic.followmycrypto.data.CryptoRepository
 import com.bvic.followmycrypto.data.FavoriteRepository
+import com.bvic.followmycrypto.model.Currency
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,9 +21,16 @@ class CryptoListViewModel(
     private val favoriteRepository: FavoriteRepository,
 ) : ViewModel() {
 
-    private val _sourceUiState = MutableStateFlow<CryptoListUiState>(CryptoListUiState.Loading)
+    private val _sourceUiState =
+        MutableStateFlow<CryptoListUiState>(CryptoListUiState.Loading)
 
     private val _favoritesOnly = MutableStateFlow(false)
+
+    private val _currency = MutableStateFlow(Currency.USD)
+
+    val currency: StateFlow<Currency> = _currency.asStateFlow()
+
+    private var loadJob: Job? = null
 
     val favoritesOnly: StateFlow<Boolean> =
         _favoritesOnly.asStateFlow()
@@ -56,6 +66,13 @@ class CryptoListViewModel(
 
     fun refresh() = load()
 
+    fun changeCurrency(newCurrency: Currency) {
+        if (_currency.value == newCurrency) return
+
+        _currency.value = newCurrency
+        load()
+    }
+
     fun toggleFavorite(symbol: String) {
         favoriteRepository.toggleFavorite(symbol)
     }
@@ -65,12 +82,26 @@ class CryptoListViewModel(
     }
 
     private fun load() {
+        loadJob?.cancel()
+
+        val selectedCurrency = _currency.value
+
         _sourceUiState.value = CryptoListUiState.Loading
-        viewModelScope.launch {
+
+        loadJob = viewModelScope.launch {
             try {
-                _sourceUiState.value = CryptoListUiState.Success(repository.getCryptos())
+                val cryptos = repository.getCryptos(selectedCurrency)
+
+                _sourceUiState.value =
+                    CryptoListUiState.Success(cryptos)
+
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _sourceUiState.value = CryptoListUiState.Error("Impossible de charger les cours.")
+                _sourceUiState.value =
+                    CryptoListUiState.Error(
+                        "Impossible de charger les cours."
+                    )
             }
         }
     }

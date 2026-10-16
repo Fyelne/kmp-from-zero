@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bvic.followmycrypto.data.CryptoRepository
 import com.bvic.followmycrypto.data.FavoriteRepository
+import com.bvic.followmycrypto.model.Currency
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +42,7 @@ class CryptoDetailViewModel(
         _uiState.value = CryptoDetailUiState.Loading
         viewModelScope.launch {
             try {
-                _uiState.value = CryptoDetailUiState.Success(repository.getCrypto(symbol))
+                _uiState.value = CryptoDetailUiState.Success(repository.getCrypto(symbol, Currency.USD))
             } catch (e: Exception) {
                 _uiState.value = CryptoDetailUiState.Error("Impossible de charger $symbol.")
             }
