@@ -126,10 +126,10 @@ fun CryptoListContent(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // 1. Boutons de sélection de devise
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
