@@ -1,5 +1,7 @@
 package com.bvic.followmycrypto.ui.list
 
+import androidx.compose.material3.Button
+import com.bvic.followmycrypto.model.Currency
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,11 +71,14 @@ fun CryptoListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val currency by viewModel.currency.collectAsStateWithLifecycle()
 
     CryptoListContent(
         uiState = uiState,
         favorites = favorites,
         favoritesOnly = favoritesOnly,
+        currency = currency,
+        onCurrencyChange = viewModel::changeCurrency,
         onRefresh = viewModel::refresh,
         onCryptoClick = onCryptoClick,
         onToggleFavorite = viewModel::toggleFavorite,
@@ -88,6 +93,8 @@ fun CryptoListContent(
     uiState: CryptoListUiState,
     favorites: Set<String>,
     favoritesOnly: Boolean,
+    currency: Currency = Currency.USD,
+    onCurrencyChange: (Currency) -> Unit = {},
     onRefresh: () -> Unit,
     onCryptoClick: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
@@ -127,21 +134,67 @@ fun CryptoListContent(
             )
         },
     ) { innerPadding ->
-        val contentModifier = Modifier.padding(innerPadding).fillMaxSize()
-        when (uiState) {
-            CryptoListUiState.Loading -> LoadingContent(modifier = contentModifier)
-            is CryptoListUiState.Error -> ErrorContent(
-                message = uiState.message,
-                onRetry = onRefresh,
-                modifier = contentModifier,
-            )
-            is CryptoListUiState.Success -> CryptoList(
-                cryptos = uiState.cryptos,
-                favorites = favorites,
-                onCryptoClick = onCryptoClick,
-                onToggleFavorite = onToggleFavorite,
-                modifier = contentModifier,
-            )
+
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+
+            // 1. Boutons de sélection de devise
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = {
+                        onCurrencyChange(Currency.USD)
+                    },
+                    enabled = currency != Currency.USD
+                ) {
+                    Text("Dollar")
+                }
+
+                Button(
+                    onClick = {
+                        onCurrencyChange(Currency.EUR)
+                    },
+                    enabled = currency != Currency.EUR,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Euro")
+                }
+            }
+            when (uiState) {
+
+                CryptoListUiState.Loading -> {
+                    LoadingContent(
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                is CryptoListUiState.Error -> {
+                    ErrorContent(
+                        message = uiState.message,
+                        onRetry = onRefresh,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                is CryptoListUiState.Success -> {
+                    CryptoList(
+                        cryptos = uiState.cryptos,
+                        favorites = favorites,
+                        currency = currency,
+                        onCryptoClick = onCryptoClick,
+                        onToggleFavorite = onToggleFavorite,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
 }
@@ -150,6 +203,7 @@ fun CryptoListContent(
 fun CryptoList(
     cryptos: List<Crypto>,
     favorites: Set<String>,
+    currency: Currency,
     onCryptoClick: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -158,6 +212,7 @@ fun CryptoList(
         items(items = cryptos, key = { it.symbol }) { crypto ->
             CryptoRow(
                 crypto = crypto,
+                currency = currency,
                 isFavorite = crypto.symbol in favorites,
                 onClick = { onCryptoClick(crypto.symbol) },
                 onToggleFavorite = {
@@ -172,6 +227,7 @@ fun CryptoList(
 @Composable
 fun CryptoRow(
     crypto: Crypto,
+    currency: Currency = Currency.USD,
     isFavorite: Boolean,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -201,7 +257,7 @@ fun CryptoRow(
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = formatPrice(crypto.price),
+                text = formatPrice(crypto.price, currency),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
